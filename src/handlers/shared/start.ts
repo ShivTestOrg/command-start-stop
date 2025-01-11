@@ -148,11 +148,6 @@ ${issues}
   }
 
   const labels = issue.labels ?? [];
-  const priceLabel = labels.find((label: Label) => label.name.startsWith("Price: "));
-
-  if (!priceLabel) {
-    throw logger.error("No price label is set to calculate the duration", { issueNumber: issue.number });
-  }
 
   // Checks if non-collaborators can be assigned to the issue
   for (const label of labels) {

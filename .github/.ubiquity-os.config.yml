@@ -1,0 +1,3 @@
+plugins:
+  - uses:
+      - plugin: ubiquity-os-marketplace/daemon-pull-review

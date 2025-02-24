@@ -5,31 +5,23 @@ interface MatchingUserProps {
   limit: number;
 }
 
-export function isAdminRole(role: string) {
-  return ADMIN_ROLES.includes(role.toLowerCase());
-}
-
-export function isCollaboratorRole(role: string) {
-  return COLLABORATOR_ROLES.includes(role.toLowerCase());
-}
-
-export function getTransformedRole(role: string) {
-  if (isAdminRole(role)) {
+export function determineUserRole(role: string): UserRole {
+  const normalizedRole = role.toLowerCase();
+  if (ADMIN_ROLES.includes(normalizedRole)) {
     return "admin";
-  } else if (isCollaboratorRole(role)) {
+  }
+  if (COLLABORATOR_ROLES.includes(normalizedRole)) {
     return "collaborator";
   }
   return "contributor";
 }
 
-export function getUserTaskLimit(maxConcurrentTasks: PluginSettings["maxConcurrentTasks"], role: string) {
-  if (isAdminRole(role)) {
+export function getUserTaskLimit(maxConcurrentTasks: PluginSettings["maxConcurrentTasks"], role: string): number {
+  const userRole = determineUserRole(role);
+  if (userRole === "admin") {
     return Infinity;
   }
-  if (isCollaboratorRole(role)) {
-    return maxConcurrentTasks.collaborator;
-  }
-  return maxConcurrentTasks.contributor;
+  return maxConcurrentTasks[userRole];
 }
 
 export async function getUserRoleAndTaskLimit(context: Context, user: string): Promise<MatchingUserProps> {

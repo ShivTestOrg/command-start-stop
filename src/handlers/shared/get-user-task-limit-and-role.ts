@@ -7,12 +7,16 @@ interface MatchingUserProps {
 
 export function determineUserRole(role: string): UserRole {
   const normalizedRole = role.toLowerCase();
-  if (ADMIN_ROLES.includes(normalizedRole)) {
+  // Admin roles have no limits
+  if (normalizedRole === "admin" || normalizedRole === "owner") {
     return "admin";
   }
-  if (COLLABORATOR_ROLES.includes(normalizedRole)) {
-    return "collaborator";
+  // Users with write access or org membership are collaborators
+  if (normalizedRole === "write" || normalizedRole === "maintain" || 
+      normalizedRole === "member" || normalizedRole === "collaborator") {
+    return "collaborator";  
   }
+  // Everyone else is a contributor
   return "contributor";
 }
 

@@ -12,20 +12,10 @@ export const COLLABORATOR_ROLES = ["write", "member", "collaborator"];
 
 export type UserRole = "admin" | "collaborator" | "contributor";
 
-const rolesWithReviewAuthority = T.Array(T.Enum(Role), {
-  default: [Role.OWNER, Role.ADMIN, Role.MEMBER, Role.COLLABORATOR],
-  uniqueItems: true,
-  description: "When considering a user for a task: which roles should be considered as having review authority? All others are ignored.",
-  examples: [
-    [Role.OWNER, Role.ADMIN],
-    [Role.MEMBER, Role.COLLABORATOR],
-  ],
-});
-
 const maxConcurrentTasks = T.Object(
   { collaborator: T.Number({ default: 10 }), contributor: T.Number({ default: 2 }) },
   {
-    description: "The maximum number of tasks a user can have assigned to them at once, based on their role.",
+    description: "The maximum number of tasks a user can have assigned to them at once. Collaborators are users with write access or org membership, contributors are everyone else. Admins have no limits.",
     examples: [{ collaborator: 10, contributor: 2 }],
     default: {},
   }

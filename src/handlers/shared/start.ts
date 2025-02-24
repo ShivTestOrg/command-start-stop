@@ -250,8 +250,11 @@ async function handleTaskLimitChecks(username: string, context: Context, logger:
   const assignedIssues = await getAssignedIssues(context, username);
   const { limit } = await getUserRoleAndTaskLimit(context, username);
 
+  // Filter out PRs that are waiting on reviewer response
+  const activePRs = openedPullRequests.filter(pr => !pr.isWaitingOnReviewer);
+
   // check for max and enforce max
-  if (Math.abs(assignedIssues.length - openedPullRequests.length) >= limit) {
+  if (Math.abs(assignedIssues.length - activePRs.length) >= limit) {
     logger.error(username === sender ? "You have reached your max task limit" : `${username} has reached their max task limit`, {
       assignedIssues: assignedIssues.length,
       openedPullRequests: openedPullRequests.length,

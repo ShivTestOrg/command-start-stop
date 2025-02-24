@@ -255,6 +255,11 @@ async function shouldSkipPullRequest(
   { owner, repo, issueNumber }: { owner: string; repo: string; issueNumber: number },
   reviewDelayTolerance: string
 ) {
+  // Check if all review threads are resolved or waiting on reviewer
+  const isWaitingOnReviewer = await checkReviewThreads(context, owner, repo, pullRequest.number);
+  if (isWaitingOnReviewer) {
+    return true;
+  }
   const timeline = await context.octokit.paginate(context.octokit.rest.issues.listEventsForTimeline, {
     owner,
     repo,
@@ -307,6 +312,59 @@ export async function getPendingOpenedPullRequests(context: Context, username: s
     }
   }
   return result;
+}
+
+async function checkReviewThreads(context: Context, owner: string, repo: string, pullNumber: number): Promise<boolean> {
+  try {
+    const {  reviews } = await context.octokit.rest.pulls.listReviews({
+      owner,
+      repo,
+      pull_number: pullNumber,
+    });
+
+    // Get all review comments
+    const {  reviewComments } = await context.octokit.rest.pulls.listReviewComments({
+      owner,
+      repo,
+      pull_number: pullNumber,
+    });
+
+    // Group comments by their thread
+    const threads = new Map<string, { comments: typeof reviewComments; resolved: boolean }>();
+    for (const comment of reviewComments) {
+      const threadId = comment.in_reply_to_id?.toString() || comment.id.toString();
+      if (!threads.has(threadId)) {
+        threads.set(threadId, { comments: [], resolved: false });
+      }
+      threads.get(threadId)?.comments.push(comment);
+    }
+
+    // Check each thread
+    const reviewThreadTimeout = getTimeValue(context.config.reviewThreadTimeout || "24 Hours");
+    const now = new Date().getTime();
+
+    for (const thread of threads.values()) {
+      const sortedComments = thread.comments.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      if (sortedComments.length === 0) continue;
+
+      const lastComment = sortedComments[0];
+      const timeSinceLastComment = now - new Date(lastComment.created_at).getTime();
+      
+      // If the last commenter was the PR author and enough time has passed
+      if (lastComment.user?.id === pullNumber && timeSinceLastComment >= reviewThreadTimeout) {
+        thread.resolved = true;
+      }
+    }
+
+    // If all threads are resolved or waiting on reviewer
+    return Array.from(threads.values()).every(thread => thread.resolved);
+  } catch (error) {
+    context.logger.error("Error checking review threads", { error });
+    return false;
+  }
 }
 
 export function getTimeValue(timeString: string): number {

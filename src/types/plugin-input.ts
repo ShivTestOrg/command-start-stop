@@ -6,17 +6,14 @@ export enum AssignedIssueScope {
   NETWORK = "network",
 }
 
-export enum Role {
-  OWNER = "OWNER",
-  ADMIN = "ADMIN",
-  MEMBER = "MEMBER",
-  COLLABORATOR = "COLLABORATOR",
-}
-
 // These correspond to getMembershipForUser and getCollaboratorPermissionLevel for a user.
-// Anything outside these values is considered to be a contributor (external user).
+// Admin roles have no limits
 export const ADMIN_ROLES = ["admin", "owner", "billing_manager"];
-export const COLLABORATOR_ROLES = ["write", "member", "collaborator"];
+
+// Collaborator roles include anyone with write access or from the organization
+export const COLLABORATOR_ROLES = ["write", "member", "collaborator", "maintain"];
+
+// Contributors are everyone else (external users)
 
 const rolesWithReviewAuthority = T.Array(T.Enum(Role), {
   default: [Role.OWNER, Role.ADMIN, Role.MEMBER, Role.COLLABORATOR],
